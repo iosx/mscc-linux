@@ -406,8 +406,8 @@ rx_handler_result_t vtss_if_mux_rx_handler(struct sk_buff **pskb)
         return RX_HANDLER_PASS;
     }
     etype = ntohs(ether_type[pop/2]);
-    if (etype != 0x0800 && etype != 0x0806 && etype != 0x86dd) {
-        //pr_err("Discard, non-IP/ARP frame, port: %u, vid: %u\n", chip_port, vid);
+    if (etype != 0x0800 && etype != 0x0806 && etype != 0x86dd && !likely(eth_proto_is_802_3(etype))) {
+        //pr_err("Discard, non-IP/ARP frame or non-802.3 frame, port: %u, vid: %u\n", chip_port, vid);
         return RX_HANDLER_PASS;
     }
     //pr_err("Pop %u bytes, chip_port: %u, vid: %u\n", pop, chip_port, vid);

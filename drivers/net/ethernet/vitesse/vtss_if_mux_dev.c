@@ -92,6 +92,7 @@ static int internal_dev_xmit(struct sk_buff *skb, struct net_device *netdev) {
     int ifh_encap_len = (priv->port_if ?
                          vtss_if_mux_chip->ifh_encap_port_len :
                          vtss_if_mux_chip->ifh_encap_vlan_len);
+    struct sk_buff *tskb;
 
     if (!vtss_if_mux_parent_dev) {
         tx_ok = 0;
@@ -100,10 +101,15 @@ static int internal_dev_xmit(struct sk_buff *skb, struct net_device *netdev) {
     }
 
     if (skb_headroom(skb) < ifh_encap_len) {
-        tx_ok = 0;
-        pr_info("Not enough room for VTSS-header: %u\n",
-               skb_headroom(skb));
-        goto DO_CNT;
+        tskb = skb_copy_expand(skb, ifh_encap_len, skb_tailroom(skb), GFP_ATOMIC);
+        if(!tskb) {
+            tx_ok = 0;
+            pr_info("Not enough room for VTSS-header: %u\n",
+                skb_headroom(skb));
+            goto DO_CNT;
+        }
+        dev_kfree_skb(skb);
+        skb = tskb;
     }
 
     if (!vtss_if_mux_chip->internal_cpu) {
